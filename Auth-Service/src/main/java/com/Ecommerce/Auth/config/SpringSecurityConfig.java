@@ -30,7 +30,10 @@ public class SpringSecurityConfig {
                 .httpBasic(basic -> basic.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/v1/auth/**"
+                                HttpMethod.POST, "/api/v1/auth"
+                        ).permitAll()
+                        .requestMatchers(
+                                HttpMethod.POST, "/api/v1/auth/register"
                         ).permitAll()
                         .requestMatchers(
                                 "/v3/api-docs/**",

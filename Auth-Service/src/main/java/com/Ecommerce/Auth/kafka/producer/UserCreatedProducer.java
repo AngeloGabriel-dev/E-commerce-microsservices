@@ -1,6 +1,7 @@
 package com.Ecommerce.Auth.kafka.producer;
 
-import com.Ecommerce.Auth.kafka.event.UserCreatedEvent;
+import com.Ecommerce.common.kafka.event.user.UserCreatedEvent;
+
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 

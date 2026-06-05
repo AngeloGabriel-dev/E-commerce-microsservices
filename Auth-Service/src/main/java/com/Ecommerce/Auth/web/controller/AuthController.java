@@ -5,6 +5,7 @@ import com.Ecommerce.Auth.dto.UserLoginDto;
 import com.Ecommerce.Auth.dto.mapper.UserMapper;
 import com.Ecommerce.Auth.entity.User;
 import com.Ecommerce.Auth.jwt.JwtToken;
+import com.Ecommerce.Auth.jwt.JwtUserDetails;
 import com.Ecommerce.Auth.jwt.JwtUserDetailsService;
 import com.Ecommerce.Auth.service.AuthService;
 import com.Ecommerce.Auth.web.exceptions.ErrorMessage;
@@ -21,10 +22,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -50,12 +49,14 @@ public class AuthController {
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
             })
     @PostMapping("/register")
-    public ResponseEntity<JwtToken> register(@RequestBody @Valid UserCreateDto dto, HttpServletRequest request){
-        authService.save(dto);
-        UserLoginDto loginDto = new UserLoginDto();
-        loginDto.setEmail(dto.getEmail());
-        loginDto.setPassword(dto.getPassword());
-        JwtToken token = authService.authenticate(loginDto);
-        return ResponseEntity.ok(token);
+    public ResponseEntity<JwtToken> registerUser(@RequestBody @Valid UserCreateDto dto, HttpServletRequest request){
+        return ResponseEntity.ok(authService.save(dto));
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal
+                                           JwtUserDetails userDetails){
+        authService.deleteUser(userDetails.getUsername(), userDetails.getId());
+        return ResponseEntity.ok().build();
     }
 }
