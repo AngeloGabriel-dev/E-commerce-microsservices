@@ -1,7 +1,9 @@
 package com.Ecommerce.common.kafka.event.user;
 
+import java.util.UUID;
+
 public record UserCreatedEvent(
-        Long userId,
+        UUID userId,
         String name,
         String phoneNumber,
         String cpf,

@@ -3,6 +3,8 @@ package com.Ecommerce.Auth.jwt;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.User;
 
+import java.util.UUID;
+
 public class JwtUserDetails extends User {
     private com.Ecommerce.Auth.entity.User user;
     public JwtUserDetails(com.Ecommerce.Auth.entity.User user){
@@ -10,7 +12,7 @@ public class JwtUserDetails extends User {
         this.user = user;
         System.out.println(user.getId());
     }
-    public Long getId(){
+    public UUID getId(){
         return this.user.getId();
     }
 

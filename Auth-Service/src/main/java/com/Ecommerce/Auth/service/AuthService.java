@@ -24,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -77,7 +78,7 @@ public class AuthService {
     }
 
     @Transactional(readOnly = true)
-    public User findUserById(Long id){
+    public User findUserById(UUID id){
         return userRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException(String.format("User with id = %s not founded.", id))
         );
@@ -92,11 +93,11 @@ public class AuthService {
     }
 
     @Transactional(readOnly = true)
-    public Set<User> findAllUsersById(List<Long> usersId) {
+    public Set<User> findAllUsersById(List<UUID> usersId) {
         return new HashSet<>(userRepository.findAllById(usersId));
     }
 
-    public void deleteUser(String email, Long id){
+    public void deleteUser(String email, UUID id){
         userRepository.deleteById(id);
         userDeletedProducer.send(new UserDeletedEvent(id, email));
     }

@@ -1,0 +1,6 @@
+CREATE DATABASE AuthService;
+CREATE DATABASE UserService;
+CREATE DATABASE OrderService;
+CREATE DATABASE CatalogService;
+CREATE DATABASE PaymentService;
+CREATE DATABASE NotificationService;

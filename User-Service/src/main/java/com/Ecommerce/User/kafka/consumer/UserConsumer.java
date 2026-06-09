@@ -12,12 +12,12 @@ public class UserConsumer {
 
     private final UserService userService;
 
-    @KafkaListener(topics = "user-created")
+    @KafkaListener(topics = "user-created", groupId = "user-service")
     public void consumeUserCreated(UserCreatedEvent event){
         userService.saveUser(event);
     }
 
-    @KafkaListener(topics = "user-deleted")
+    @KafkaListener(topics = "user-deleted", groupId = "user-service")
     public void consumeUserDeleted(UserDeletedEvent event){
         userService.deleteUser(event);
     }

@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -12,7 +14,7 @@ import lombok.Setter;
 @Table(name = "users")
 public class User {
     @Id
-    private Long id;
+    private UUID id;
 
     @Column(nullable = false, length = 100)
     private String name;
