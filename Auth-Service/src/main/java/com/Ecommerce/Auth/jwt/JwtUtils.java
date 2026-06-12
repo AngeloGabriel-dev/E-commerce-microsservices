@@ -12,6 +12,7 @@ import java.security.Key;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.UUID;
 
 @Slf4j
 public class JwtUtils {
@@ -34,7 +35,7 @@ public class JwtUtils {
         return Date.from(end.atZone(ZoneId.systemDefault()).toInstant());
     }
 
-    public static JwtToken createToken(String username, String role){
+    public static JwtToken createToken(String username, String role, UUID userId){
         Date issuedAt = new Date();
         Date limit = toExpireDate(issuedAt);
 
@@ -45,6 +46,7 @@ public class JwtUtils {
                 .setExpiration(limit)
                 .signWith(generateKey(), SignatureAlgorithm.HS256)
                 .claim("role", role)
+                .claim("userId", userId.toString())
                 .compact();
         return new JwtToken(token);
     }

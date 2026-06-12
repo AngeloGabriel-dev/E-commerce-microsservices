@@ -1,5 +1,6 @@
 package com.Ecommerce.User.service;
 
+import com.Ecommerce.User.dto.SellerResponseDto;
 import com.Ecommerce.User.entity.User;
 import com.Ecommerce.common.kafka.event.user.*;
 import com.Ecommerce.User.repository.UserRepository;
@@ -38,6 +39,22 @@ public class UserService {
     public User getById(UUID id){
         return userRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException(String.format("User with id = %s not founded.", id))
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public SellerResponseDto getSellerById(UUID id){
+        User user = userRepository.findById(id).orElseThrow(
+                () -> new EntityNotFoundException(String.format("Seller with id = %s not founded.", id))
+        );
+
+        log.info("Seller found: {}", user.getId());
+
+        return new SellerResponseDto(
+                user.getId().toString(),
+                user.getName(),
+                user.getEmail(),
+                user.getPhoneNumber()
         );
     }
 }
