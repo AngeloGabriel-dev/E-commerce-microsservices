@@ -1,10 +1,8 @@
-package com.Ecommerce.Catalog.config;
+package com.Ecommerce.Order.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
@@ -24,8 +22,8 @@ public class SpringDocOpenApiConfig {
                 )
                 .info(
                         new Info()
-                                .title("Catalog Service API - E-commerce")
-                                .description("API para gestão de produtos do catálogo de e-commerce")
+                                .title("Order Service API - E-commerce")
+                                .description("API para gestão de pedidos do e-commerce")
                                 .version("v1")
                 );
     }

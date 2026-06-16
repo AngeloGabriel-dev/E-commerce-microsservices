@@ -7,6 +7,7 @@ import com.Ecommerce.Catalog.entity.Product;
 import com.Ecommerce.Catalog.exception.ProductNotFoundException;
 import com.Ecommerce.Catalog.exception.SkuUniqueViolationException;
 import com.Ecommerce.Catalog.repository.ProductRepository;
+import com.Ecommerce.common.kafka.event.order.OrderConfirmedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -82,5 +83,32 @@ public class CatalogService {
                         String.format("Product with id = %s not found.", id)
                 ));
         return ProductMapper.toDto(product);
+    }
+
+    @Transactional
+    public void deductStock(OrderConfirmedEvent event) {
+        log.info("Deducting stock for order: {}", event.orderId());
+
+        for (OrderConfirmedEvent.ProductStockItem item : event.products()) {
+            Product product = productRepository.findById(item.productId())
+                    .orElseThrow(() -> new ProductNotFoundException(
+                            String.format("Product with id = %s not found.", item.productId())
+                    ));
+
+            if (product.getStock() < item.quantity()) {
+                log.error("Insufficient stock for product {}. Available: {}, requested: {}",
+                        product.getId(), product.getStock(), item.quantity());
+                throw new IllegalArgumentException(
+                        String.format("Insufficient stock for product %s. Available: %d, requested: %d",
+                                product.getName(), product.getStock(), item.quantity())
+                );
+            }
+
+            product.setStock(product.getStock() - item.quantity());
+            productRepository.save(product);
+            log.info("Stock deducted for product {}: {} remaining", product.getId(), product.getStock());
+        }
+
+        log.info("Stock deduction completed for order: {}", event.orderId());
     }
 }
