@@ -1,1 +1,3 @@
 - corrigir OpenAPI dos services
+- trocar comunicação entre user e auth 
+pra requisições REST
