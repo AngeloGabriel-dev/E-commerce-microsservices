@@ -1,8 +1,8 @@
 package com.Ecommerce.User.service;
 
 import com.Ecommerce.User.dto.SellerResponseDto;
+import com.Ecommerce.User.dto.UserCreateDto;
 import com.Ecommerce.User.entity.User;
-import com.Ecommerce.common.kafka.event.user.*;
 import com.Ecommerce.User.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -19,20 +19,20 @@ public class UserService {
     private final UserRepository userRepository;
 
     @Transactional
-    public User saveUser(UserCreatedEvent event){
+    public User saveUser(UserCreateDto dto){
         User user = new User();
 
-        user.setId(event.userId());
-        user.setName(event.name());
-        user.setPhoneNumber(event.phoneNumber());
-        user.setCpf(event.cpf());
-        user.setEmail(event.email());
+        user.setId(dto.getId());
+        user.setName(dto.getName());
+        user.setPhoneNumber(dto.getPhoneNumber());
+        user.setCpf(dto.getCpf());
+        user.setEmail(dto.getEmail());
 
         return userRepository.save(user);
     }
 
-    public void deleteUser(UserDeletedEvent event){
-        userRepository.deleteById(event.userId());
+    public void deleteUser(UUID userId){
+        userRepository.deleteById(userId);
     }
 
     @Transactional(readOnly = true)

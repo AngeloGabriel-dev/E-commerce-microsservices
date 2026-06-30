@@ -6,23 +6,23 @@ import com.Ecommerce.Auth.entity.User;
 import com.Ecommerce.Auth.exception.EmailUniqueViolationException;
 import com.Ecommerce.Auth.jwt.JwtToken;
 import com.Ecommerce.Auth.jwt.JwtUserDetailsService;
-import com.Ecommerce.Auth.kafka.producer.UserDeletedProducer;
-import com.Ecommerce.common.kafka.event.user.UserCreatedEvent;
-import com.Ecommerce.Auth.kafka.producer.UserCreatedProducer;
 import com.Ecommerce.Auth.repository.UserRepository;
-import com.Ecommerce.common.kafka.event.user.UserDeletedEvent;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 import lombok.extern.slf4j.Slf4j;
 
-
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -34,8 +34,10 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUserDetailsService detailsService;
-    private final UserCreatedProducer userCreatedProducer;
-    private final UserDeletedProducer userDeletedProducer;
+    private final RestTemplate restTemplate;
+
+    @Value("${app.user-service.url:http://user-service:8081}")
+    private String userServiceUrl;
 
     @Transactional
     public JwtToken save(UserCreateDto createDto){
@@ -44,22 +46,41 @@ public class AuthService {
             user.setEmail(createDto.getEmail());
             user.setPassword(passwordEncoder.encode(createDto.getPassword()));
             user.setRole(createDto.getRole());
+
+            // Save auth user first to generate the ID
             User savedUser = userRepository.save(user);
-            userCreatedProducer.send(
-                    new UserCreatedEvent(
-                            savedUser.getId(),
-                            createDto.getName(),
-                            createDto.getPhoneNumber(),
-                            createDto.getCpf(),
-                            savedUser.getEmail(),
-                            savedUser.getRole().toString()
-                    )
+
+            // Call User-Service via REST to create user profile
+            Map<String, Object> userProfile = new HashMap<>();
+            userProfile.put("id", savedUser.getId());
+            userProfile.put("name", createDto.getName());
+            userProfile.put("phoneNumber", createDto.getPhoneNumber());
+            userProfile.put("cpf", createDto.getCpf());
+            userProfile.put("email", savedUser.getEmail());
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(userProfile, headers);
+
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                    userServiceUrl + "/api/v1/users",
+                    request,
+                    String.class
             );
+
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                throw new RuntimeException("Failed to create user in User-Service");
+            }
+
             return authenticate(new UserLoginDto(createDto.getEmail(),
                                             createDto.getPassword()));
         }
         catch (org.springframework.dao.DataIntegrityViolationException ex){
             throw new EmailUniqueViolationException(String.format("Email {%s} has already been registered.", createDto.getEmail()));
+        }
+        catch (Exception ex) {
+            log.error("Error creating user in User-Service: {}", ex.getMessage());
+            throw new RuntimeException("Failed to create user profile. Registration aborted.", ex);
         }
     }
 
@@ -99,7 +120,12 @@ public class AuthService {
 
     public void deleteUser(String email, UUID id){
         userRepository.deleteById(id);
-        userDeletedProducer.send(new UserDeletedEvent(id, email));
+
+        try {
+            restTemplate.delete(userServiceUrl + "/api/v1/users/" + id);
+        } catch (Exception ex) {
+            log.warn("Failed to notify User-Service about user deletion: {}", ex.getMessage());
+        }
     }
 
     /*public User.Role findUserRoleByEmail(String email) {

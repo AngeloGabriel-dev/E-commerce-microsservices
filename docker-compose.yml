@@ -95,6 +95,20 @@ services:
     networks:
       - ecommerce-network
 
+  notification-service:
+    build:
+      context: ./Notification-Service
+    container_name: notification-service
+    depends_on:
+      - kafka
+    ports:
+      - "8085:8085"
+    environment:
+      MAIL_USERNAME: ${MAIL_USERNAME:-your-email@gmail.com}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-your-app-password}
+    networks:
+      - ecommerce-network
+
 volumes:
   postgres_data:
 

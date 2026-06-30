@@ -28,8 +28,10 @@ public class SpringSecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/api/v1/users/sellers"
+                                "/api/v1/users/sellers/**"
                         ).permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/users").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/users/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(

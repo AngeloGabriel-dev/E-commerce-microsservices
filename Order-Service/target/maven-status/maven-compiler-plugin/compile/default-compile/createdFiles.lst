@@ -11,6 +11,7 @@ com\Ecommerce\Order\service\OrderService.class
 com\Ecommerce\Order\jwt\JwtAuthorizationFilter.class
 com\Ecommerce\Order\jwt\JwtUtils.class
 com\Ecommerce\Order\dto\OrderResponseDto$SellerOrderResponseDto$SellerOrderResponseDtoBuilder.class
+com\Ecommerce\Order\kafka\producer\OrderCancelledProducer.class
 com\Ecommerce\Order\dto\OrderResponseDto.class
 com\Ecommerce\Order\entity\OrderItem$OrderItemBuilder.class
 com\Ecommerce\Order\repository\OrderRepository.class

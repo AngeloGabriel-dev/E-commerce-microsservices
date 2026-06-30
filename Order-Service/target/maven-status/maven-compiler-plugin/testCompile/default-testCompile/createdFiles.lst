@@ -1,0 +1,5 @@
+com\Ecommerce\Order\service\OrderServiceTest$CreateOrderTests.class
+com\Ecommerce\Order\service\OrderServiceTest$GetOrderByIdTests.class
+com\Ecommerce\Order\service\OrderServiceTest$FindOrdersByClientIdTests.class
+com\Ecommerce\Order\service\OrderServiceTest.class
+com\Ecommerce\Order\service\OrderServiceTest$ConfirmOrderTests.class

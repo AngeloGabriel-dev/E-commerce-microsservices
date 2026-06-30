@@ -26,6 +26,7 @@
         <module>Payment-Service</module>
         <module>User-Service</module>
         <module>ecommerce-common</module>
+        <module>Notification-Service</module>
     </modules>
 
     <properties>
@@ -38,6 +39,7 @@
         <modelmapper.version>3.0.0</modelmapper.version>
         <ecommerce-common.version>1.0.0</ecommerce-common.version>
         <mercadopago.version>2.1.29</mercadopago.version>
+        <junit.version>5.11.4</junit.version>
     </properties>
 
     <dependencyManagement>
@@ -87,6 +89,11 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
