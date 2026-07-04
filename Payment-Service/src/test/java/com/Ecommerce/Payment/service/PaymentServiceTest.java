@@ -1,5 +1,7 @@
 package com.Ecommerce.Payment.service;
 
+import com.Ecommerce.Payment.client.OrderResponseDto;
+import com.Ecommerce.Payment.client.OrderServiceClient;
 import com.Ecommerce.Payment.dto.PaymentCreateDto;
 import com.Ecommerce.Payment.dto.PaymentResponseDto;
 import com.Ecommerce.Payment.entity.Payment;
@@ -44,61 +46,80 @@ class PaymentServiceTest {
     @Mock
     private MercadoPagoGateway mercadoPagoGateway;
 
+    @Mock
+    private OrderServiceClient orderServiceClient;
+
     private PaymentService paymentService;
 
     @BeforeEach
     void setUp() {
-        paymentService = new PaymentService(paymentRepository, paymentConfirmedProducer, mercadoPagoGateway);
+        paymentService = new PaymentService(paymentRepository, paymentConfirmedProducer, mercadoPagoGateway, orderServiceClient);
     }
 
     private PaymentCreateDto createValidPaymentDto() {
         PaymentCreateDto dto = new PaymentCreateDto();
-        dto.setOrderId(UUID.randomUUID());
-        dto.setClientId(UUID.randomUUID());
-        dto.setTotalPrice(new BigDecimal("100.00"));
         dto.setPaymentMethod("credit_card");
         return dto;
     }
 
-    private Payment createPayment(PaymentCreateDto dto) {
+    private OrderResponseDto createOrderResponseDto() {
+        return OrderResponseDto.builder()
+                .id(UUID.randomUUID())
+                .clientId(UUID.randomUUID())
+                .totalPrice(new BigDecimal("100.00"))
+                .status("PENDING_PAYMENT")
+                .build();
+    }
+
+    private Payment createPayment(OrderResponseDto order) {
         return Payment.builder()
                 .id(UUID.randomUUID())
-                .orderId(dto.getOrderId())
-                .clientId(dto.getClientId())
-                .totalPrice(dto.getTotalPrice())
-                .paymentMethod(dto.getPaymentMethod())
+                .orderId(order.getId())
+                .clientId(order.getClientId())
+                .totalPrice(order.getTotalPrice())
+                .paymentMethod("credit_card")
                 .status(Payment.PaymentStatus.PENDING)
                 .build();
     }
+
     @Nested
     @DisplayName("processPayment() - Create payment with Mercado Pago")
     class ProcessPaymentTests {
 
         @Test
-        @DisplayName("Should create payment preference and return response DTO")
+        @DisplayName("Should fetch order, create payment preference and return response DTO")
         void processPayment_Success() {
             // Arrange
             PaymentCreateDto dto = createValidPaymentDto();
-            Payment payment = createPayment(dto);
+            OrderResponseDto order = createOrderResponseDto();
+            Payment payment = createPayment(order);
 
             MercadoPagoDTOs.PaymentPreferenceResponse preferenceResponse = MercadoPagoDTOs.PaymentPreferenceResponse.builder()
                     .id("pref_123")
                     .initPoint("https://mercadopago.com/checkout?pref_id=pref_123")
                     .build();
 
+            when(orderServiceClient.getOrderById(eq(order.getId()))).thenReturn(order);
             when(mercadoPagoGateway.createPreference(any(MercadoPagoDTOs.PaymentPreferenceRequest.class))).thenReturn(preferenceResponse);
-            when(paymentRepository.save(any(Payment.class))).thenReturn(payment);
+            when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> {
+                Payment saved = invocation.getArgument(0);
+                saved.setId(payment.getId());
+                return saved;
+            });
 
             // Act
-            PaymentResponseDto result = paymentService.processPayment(dto);
+            PaymentResponseDto result = paymentService.processPayment(order.getId(), dto);
 
             // Assert
             assertThat(result).isNotNull();
-            assertThat(result.getOrderId()).isEqualTo(dto.getOrderId());
+            assertThat(result.getOrderId()).isEqualTo(order.getId());
+            assertThat(result.getClientId()).isEqualTo(order.getClientId());
+            assertThat(result.getTotalPrice()).isEqualByComparingTo(order.getTotalPrice());
             assertThat(result.getStatus()).isEqualTo("PENDING");
             assertThat(result.getMpPreferenceId()).isEqualTo("pref_123");
             assertThat(result.getMpInitPoint()).isEqualTo("https://mercadopago.com/checkout?pref_id=pref_123");
 
+            verify(orderServiceClient).getOrderById(eq(order.getId()));
             verify(mercadoPagoGateway).createPreference(any(MercadoPagoDTOs.PaymentPreferenceRequest.class));
             verify(paymentRepository).save(any(Payment.class));
         }
@@ -113,7 +134,7 @@ class PaymentServiceTest {
         void confirmPayment_Success() {
             // Arrange
             UUID paymentId = UUID.randomUUID();
-            Payment payment = createPayment(createValidPaymentDto());
+            Payment payment = createPayment(createOrderResponseDto());
             payment.setId(paymentId);
 
             when(paymentRepository.findById(eq(paymentId))).thenReturn(java.util.Optional.of(payment));
@@ -136,7 +157,7 @@ class PaymentServiceTest {
         void confirmPayment_NotPending() {
             // Arrange
             UUID paymentId = UUID.randomUUID();
-            Payment payment = createPayment(createValidPaymentDto());
+            Payment payment = createPayment(createOrderResponseDto());
             payment.setId(paymentId);
             payment.setStatus(Payment.PaymentStatus.CONFIRMED);
 
@@ -181,7 +202,7 @@ class PaymentServiceTest {
             // Arrange
             Long mpPaymentId = 12345L;
             String topic = "payment";
-            Payment payment = createPayment(createValidPaymentDto());
+            Payment payment = createPayment(createOrderResponseDto());
             payment.setStatus(Payment.PaymentStatus.PENDING);
 
             MercadoPagoDTOs.MercadoPagoPaymentResponse mpPayment = MercadoPagoDTOs.MercadoPagoPaymentResponse.builder()
@@ -215,7 +236,7 @@ class PaymentServiceTest {
             // Arrange
             Long mpPaymentId = 12346L;
             String topic = "payment";
-            Payment payment = createPayment(createValidPaymentDto());
+            Payment payment = createPayment(createOrderResponseDto());
             payment.setStatus(Payment.PaymentStatus.PENDING);
 
             MercadoPagoDTOs.MercadoPagoPaymentResponse mpPayment = MercadoPagoDTOs.MercadoPagoPaymentResponse.builder()
@@ -243,7 +264,7 @@ class PaymentServiceTest {
             // Arrange
             Long mpPaymentId = 12347L;
             String topic = "payment";
-            Payment payment = createPayment(createValidPaymentDto());
+            Payment payment = createPayment(createOrderResponseDto());
 
             MercadoPagoDTOs.MercadoPagoPaymentResponse mpPayment = MercadoPagoDTOs.MercadoPagoPaymentResponse.builder()
                     .id(mpPaymentId)
@@ -301,7 +322,7 @@ class PaymentServiceTest {
             int page = 0;
             int size = 10;
 
-            Payment payment = createPayment(createValidPaymentDto());
+            Payment payment = createPayment(createOrderResponseDto());
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
             Page<Payment> paymentPage = new PageImpl<>(List.of(payment), pageable, 1);
 
@@ -350,7 +371,7 @@ class PaymentServiceTest {
         void getPaymentById_Found() {
             // Arrange
             UUID id = UUID.randomUUID();
-            Payment payment = createPayment(createValidPaymentDto());
+            Payment payment = createPayment(createOrderResponseDto());
             payment.setId(id);
 
             when(paymentRepository.findById(eq(id))).thenReturn(java.util.Optional.of(payment));
@@ -391,19 +412,19 @@ class PaymentServiceTest {
         @DisplayName("Should return payment when found")
         void getPaymentByOrderId_Found() {
             // Arrange
-            UUID orderId = UUID.randomUUID();
-            Payment payment = createPayment(createValidPaymentDto());
+            OrderResponseDto orderDto = createOrderResponseDto();
+            Payment payment = createPayment(orderDto);
 
-            when(paymentRepository.findByOrderId(eq(orderId))).thenReturn(java.util.Optional.of(payment));
+            when(paymentRepository.findByOrderId(eq(orderDto.getId()))).thenReturn(java.util.Optional.of(payment));
 
             // Act
-            PaymentResponseDto result = paymentService.getPaymentByOrderId(orderId);
+            PaymentResponseDto result = paymentService.getPaymentByOrderId(orderDto.getId());
 
             // Assert
             assertThat(result).isNotNull();
-            assertThat(result.getOrderId()).isEqualTo(orderId);
+            assertThat(result.getOrderId()).isEqualTo(orderDto.getId());
 
-            verify(paymentRepository).findByOrderId(eq(orderId));
+            verify(paymentRepository).findByOrderId(eq(orderDto.getId()));
         }
 
         @Test

@@ -1,6 +1,7 @@
 package com.Ecommerce.User.web.controller;
 
 import com.Ecommerce.User.dto.SellerResponseDto;
+import com.Ecommerce.User.dto.UserContactInfoDto;
 import com.Ecommerce.User.dto.UserCreateDto;
 import com.Ecommerce.User.entity.User;
 import com.Ecommerce.User.service.UserService;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -65,5 +67,22 @@ public class UserController {
         log.info("REST request to get seller by id: {}", id);
         SellerResponseDto seller = userService.getSellerById(id);
         return ResponseEntity.ok(seller);
+    }
+
+    @Operation(summary = "Get user contact info by ID", description = "Resource to get user email and phone number by ID. Only accessible by Notification Service.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "User contact info found successfully",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserContactInfoDto.class))),
+                    @ApiResponse(responseCode = "404", description = "User not found",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+                    @ApiResponse(responseCode = "403", description = "Access denied - Only Notification Service can access this endpoint",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+            })
+    @GetMapping("/{id}/contact-info")
+    @PreAuthorize("hasRole('ROLE_NOTIFICATION_SERVICE')")
+    public ResponseEntity<UserContactInfoDto> getUserContactInfo(@PathVariable UUID id) {
+        log.info("REST request to get user contact info by id: {}", id);
+        UserContactInfoDto contactInfo = userService.getUserContactInfo(id);
+        return ResponseEntity.ok(contactInfo);
     }
 }

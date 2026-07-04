@@ -30,7 +30,6 @@ public class OrderController {
 
     private final OrderService orderService;
 
-    @PreAuthorize("hasRole('CLIENT')")
     @Operation(summary = "Create a new order", description = "Resource to create a new order. Only users with CLIENT role can access.",
             responses = {
                     @ApiResponse(responseCode = "201", description = "Order created successfully",
@@ -41,13 +40,14 @@ public class OrderController {
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
             })
     @PostMapping
-    public ResponseEntity<OrderResponseDto> createOrder(@RequestBody @Valid OrderCreateDto dto) {
-        log.info("REST request to create order for client: {}", dto.getClientId());
-        OrderResponseDto response = orderService.createOrder(dto);
+    public ResponseEntity<OrderResponseDto> createOrder(Authentication authentication,
+                                                        @RequestBody @Valid OrderCreateDto dto) {
+        UUID clientId = UUID.fromString(authentication.getCredentials().toString());
+        log.info("REST request to create order for client: {}", clientId);
+        OrderResponseDto response = orderService.createOrder(dto, clientId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PreAuthorize("hasRole('CLIENT')")
     @Operation(summary = "List orders by client", description = "Resource to list orders of the authenticated client with pagination",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Orders retrieved successfully")
@@ -63,8 +63,7 @@ public class OrderController {
         return ResponseEntity.ok(orders);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Get order by ID", description = "Resource to get a specific order by its ID. Only ADMIN can access.",
+    @Operation(summary = "Get order by ID", description = "Resource to get a specific order by its ID.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Order retrieved successfully"),
                     @ApiResponse(responseCode = "404", description = "Order not found",

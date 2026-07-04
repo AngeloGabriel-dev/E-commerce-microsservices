@@ -33,7 +33,13 @@ public class SpringSecurityConfig {
                                 HttpMethod.POST, "/api/v1/auth"
                         ).permitAll()
                         .requestMatchers(
+                                HttpMethod.POST, "/api/v1/auth/login"
+                        ).permitAll()
+                        .requestMatchers(
                                 HttpMethod.POST, "/api/v1/auth/register"
+                        ).permitAll()
+                        .requestMatchers(
+                                HttpMethod.POST, "/api/v1/auth/service-account/login"
                         ).permitAll()
                         .requestMatchers(
                                 "/v3/api-docs/**",

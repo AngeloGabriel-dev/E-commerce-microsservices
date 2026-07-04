@@ -5,6 +5,7 @@ import java.util.UUID;
 
 public record OrderConfirmedEvent(
         UUID orderId,
+        UUID clientId,
         List<ProductStockItem> products
 ) {
     public record ProductStockItem(

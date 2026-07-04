@@ -1,5 +1,7 @@
 package com.Ecommerce.Payment.service;
 
+import com.Ecommerce.Payment.client.OrderResponseDto;
+import com.Ecommerce.Payment.client.OrderServiceClient;
 import com.Ecommerce.Payment.dto.PaymentCreateDto;
 import com.Ecommerce.Payment.dto.PaymentResponseDto;
 import com.Ecommerce.Payment.dto.mapper.PaymentMapper;
@@ -29,19 +31,23 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final PaymentConfirmedProducer paymentConfirmedProducer;
     private final MercadoPagoGateway mercadoPagoGateway;
+    private final OrderServiceClient orderServiceClient;
 
     @Transactional
-    public PaymentResponseDto processPayment(PaymentCreateDto dto) {
-        log.info("Processing payment for order: {}", dto.getOrderId());
+    public PaymentResponseDto processPayment(UUID orderId, PaymentCreateDto dto) {
+        log.info("Processing payment for order: {}", orderId);
 
-        Payment payment = PaymentMapper.toPayment(dto);
+        // Fetch order from Order-Service
+        OrderResponseDto order = orderServiceClient.getOrderById(orderId);
+
+        Payment payment = PaymentMapper.toPayment(dto, order);
 
         // Create Mercado Pago preference
         MercadoPagoDTOs.PaymentPreferenceRequest preferenceRequest = MercadoPagoDTOs.PaymentPreferenceRequest.builder()
-                .externalReference(dto.getOrderId().toString())
-                .title("Order " + dto.getOrderId())
-                .description("Payment for order " + dto.getOrderId())
-                .totalAmount(dto.getTotalPrice())
+                .externalReference(order.getId().toString())
+                .title("Order " + order.getId())
+                .description("Payment for order " + order.getId())
+                .totalAmount(order.getTotalPrice())
                 .currencyId("BRL")
                 .quantity(1)
                 .build();
@@ -50,6 +56,7 @@ public class PaymentService {
 
         payment.setMpPreferenceId(preferenceResponse.getId());
         payment.setMpInitPoint(preferenceResponse.getInitPoint());
+        payment.setMpSandboxInitPoint(preferenceResponse.getSandboxInitPoint());
 
         Payment savedPayment = paymentRepository.save(payment);
         log.info("Payment created successfully with id: {}, mp preference: {}", savedPayment.getId(), preferenceResponse.getId());

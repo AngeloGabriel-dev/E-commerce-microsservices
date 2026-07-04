@@ -1,5 +1,7 @@
 package com.Ecommerce.Order.service;
 
+import com.Ecommerce.Order.client.CatalogServiceClient;
+import com.Ecommerce.Order.client.ProductResponseDto;
 import com.Ecommerce.Order.dto.OrderCreateDto;
 import com.Ecommerce.Order.dto.OrderResponseDto;
 import com.Ecommerce.Order.dto.mapper.OrderMapper;
@@ -20,8 +22,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -30,12 +36,76 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderConfirmedProducer orderConfirmedProducer;
+    private final CatalogServiceClient catalogServiceClient;
 
     @Transactional
-    public OrderResponseDto createOrder(OrderCreateDto dto) {
-        log.info("Creating order for client: {}", dto.getClientId());
+    public OrderResponseDto createOrder(OrderCreateDto dto, UUID clientId) {
+        log.info("Creating order for client: {}", clientId);
 
-        Order order = OrderMapper.toOrder(dto);
+        // Fetch all products from catalog
+        List<UUID> productIds = dto.getItems().stream()
+                .map(OrderCreateDto.OrderItemDto::getProductId)
+                .toList();
+        Map<UUID, ProductResponseDto> productMap = catalogServiceClient.fetchProducts(productIds);
+
+        // Group items by sellerId (obtained from catalog product data)
+        Map<UUID, List<OrderCreateDto.OrderItemDto>> itemsBySeller = dto.getItems().stream()
+                .collect(Collectors.groupingBy(
+                        item -> productMap.get(item.getProductId()).getSellerId()
+                ));
+
+        // Build order
+        Order order = Order.builder()
+                .clientId(clientId)
+                .status(Order.OrderStatus.PENDING_PAYMENT)
+                .totalPrice(BigDecimal.ZERO)
+                .sellerOrders(new ArrayList<>())
+                .build();
+
+        List<SellerOrder> sellerOrders = itemsBySeller.entrySet().stream()
+                .map(entry -> {
+                    UUID sellerId = entry.getKey();
+                    List<OrderCreateDto.OrderItemDto> sellerItems = entry.getValue();
+
+                    SellerOrder sellerOrder = SellerOrder.builder()
+                            .order(order)
+                            .sellerId(sellerId)
+                            .status(SellerOrder.SellerOrderStatus.PENDING_PAYMENT)
+                            .subTotal(BigDecimal.ZERO)
+                            .items(new ArrayList<>())
+                            .build();
+
+                    List<OrderItem> orderItems = sellerItems.stream()
+                            .map(itemDto -> {
+                                ProductResponseDto product = productMap.get(itemDto.getProductId());
+                                return OrderItem.builder()
+                                        .sellerOrder(sellerOrder)
+                                        .productId(product.getId())
+                                        .productName(product.getName())
+                                        .unitPrice(product.getPrice())
+                                        .quantity(itemDto.getQuantity())
+                                        .build();
+                            })
+                            .collect(Collectors.toList());
+
+                    sellerOrder.setItems(orderItems);
+
+                    BigDecimal subTotal = orderItems.stream()
+                            .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    sellerOrder.setSubTotal(subTotal);
+
+                    return sellerOrder;
+                })
+                .collect(Collectors.toList());
+
+        order.setSellerOrders(sellerOrders);
+
+        BigDecimal totalPrice = sellerOrders.stream()
+                .map(SellerOrder::getSubTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        order.setTotalPrice(totalPrice);
+
         Order savedOrder = orderRepository.save(order);
         log.info("Order created successfully with id: {}", savedOrder.getId());
 
@@ -92,6 +162,7 @@ public class OrderService {
 
         OrderConfirmedEvent confirmedEvent = new OrderConfirmedEvent(
                 order.getId(),
+                order.getClientId(),
                 stockItems
         );
 

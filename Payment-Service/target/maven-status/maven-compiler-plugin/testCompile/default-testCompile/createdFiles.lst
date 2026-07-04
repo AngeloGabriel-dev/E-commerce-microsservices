@@ -1,2 +1,8 @@
 com\Ecommerce\Payment\PaymentApplicationTests.class
+com\Ecommerce\Payment\service\PaymentServiceTest$GetPaymentByOrderIdTests.class
+com\Ecommerce\Payment\service\PaymentServiceTest$ConfirmPaymentTests.class
+com\Ecommerce\Payment\service\PaymentServiceTest$FindPaymentsByClientIdTests.class
+com\Ecommerce\Payment\service\PaymentServiceTest$ProcessPaymentTests.class
+com\Ecommerce\Payment\service\PaymentServiceTest$GetPaymentByIdTests.class
+com\Ecommerce\Payment\service\PaymentServiceTest$ProcessWebhookNotificationTests.class
 com\Ecommerce\Payment\service\PaymentServiceTest.class

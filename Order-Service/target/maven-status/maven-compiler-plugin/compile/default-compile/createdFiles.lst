@@ -9,6 +9,7 @@ com\Ecommerce\Order\kafka\producer\OrderConfirmedProducer.class
 com\Ecommerce\Order\dto\OrderResponseDto$SellerOrderResponseDto.class
 com\Ecommerce\Order\service\OrderService.class
 com\Ecommerce\Order\jwt\JwtAuthorizationFilter.class
+com\Ecommerce\Order\client\ProductResponseDto$ProductResponseDtoBuilder.class
 com\Ecommerce\Order\jwt\JwtUtils.class
 com\Ecommerce\Order\dto\OrderResponseDto$SellerOrderResponseDto$SellerOrderResponseDtoBuilder.class
 com\Ecommerce\Order\kafka\producer\OrderCancelledProducer.class
@@ -17,6 +18,7 @@ com\Ecommerce\Order\entity\OrderItem$OrderItemBuilder.class
 com\Ecommerce\Order\repository\OrderRepository.class
 com\Ecommerce\Order\entity\SellerOrder$SellerOrderStatus.class
 com\Ecommerce\Order\web\exceptions\ErrorMessage.class
+com\Ecommerce\Order\config\RestTemplateConfig.class
 com\Ecommerce\Order\entity\SellerOrder$SellerOrderBuilder.class
 com\Ecommerce\Order\config\SpringDocOpenApiConfig.class
 com\Ecommerce\Order\dto\OrderResponseDto$OrderItemResponseDto.class
@@ -29,9 +31,11 @@ com\Ecommerce\Order\repository\SellerOrderRepository.class
 com\Ecommerce\Order\config\CorsConfig.class
 com\Ecommerce\Order\jwt\JwtAuthenticationEntryPoint.class
 com\Ecommerce\Order\exception\InvalidOrderException.class
+com\Ecommerce\Order\config\BearerTokenInterceptor.class
 com\Ecommerce\Order\web\exceptions\ApiExceptionHandler.class
-com\Ecommerce\Order\dto\OrderCreateDto$SellerOrderDto.class
+com\Ecommerce\Order\client\CatalogServiceClient.class
 com\Ecommerce\Order\OrderApplication.class
 com\Ecommerce\Order\dto\OrderCreateDto$OrderItemDto.class
 com\Ecommerce\Order\entity\OrderItem.class
+com\Ecommerce\Order\client\ProductResponseDto.class
 com\Ecommerce\Order\web\controller\OrderController.class

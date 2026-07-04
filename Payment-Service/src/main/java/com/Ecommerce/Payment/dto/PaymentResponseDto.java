@@ -23,6 +23,7 @@ public class PaymentResponseDto {
     private String mpPreferenceId;
     private String mpStatus;
     private String mpInitPoint;
+    private String mpSandboxInitPoint;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

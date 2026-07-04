@@ -48,6 +48,9 @@ public class Payment {
     @Column(length = 255)
     private String mpInitPoint;
 
+    @Column(length = 255)
+    private String mpSandboxInitPoint;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

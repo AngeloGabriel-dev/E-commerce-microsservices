@@ -31,7 +31,7 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @PreAuthorize("hasRole('CLIENT')")
-    @Operation(summary = "Process a new payment", description = "Resource to process a new payment. Only users with CLIENT role can access.",
+    @Operation(summary = "Process a new payment", description = "Resource to process a new payment for an order. Only users with CLIENT role can access.",
             responses = {
                     @ApiResponse(responseCode = "201", description = "Payment processed successfully",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = PaymentResponseDto.class))),
@@ -40,10 +40,10 @@ public class PaymentController {
                     @ApiResponse(responseCode = "403", description = "Access denied. Only CLIENT role can process payments.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
             })
-    @PostMapping
-    public ResponseEntity<PaymentResponseDto> processPayment(@RequestBody @Valid PaymentCreateDto dto) {
-        log.info("REST request to process payment for order: {}", dto.getOrderId());
-        PaymentResponseDto response = paymentService.processPayment(dto);
+    @PostMapping("/order/{orderId}")
+    public ResponseEntity<PaymentResponseDto> processPayment(@PathVariable UUID orderId, @RequestBody @Valid PaymentCreateDto dto) {
+        log.info("REST request to process payment for order: {}", orderId);
+        PaymentResponseDto response = paymentService.processPayment(orderId, dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

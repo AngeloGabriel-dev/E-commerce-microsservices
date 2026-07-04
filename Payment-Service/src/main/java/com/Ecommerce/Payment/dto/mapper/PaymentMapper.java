@@ -1,19 +1,21 @@
 package com.Ecommerce.Payment.dto.mapper;
 
+import com.Ecommerce.Payment.client.OrderResponseDto;
 import com.Ecommerce.Payment.dto.PaymentCreateDto;
 import com.Ecommerce.Payment.dto.PaymentResponseDto;
 import com.Ecommerce.Payment.entity.Payment;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class PaymentMapper {
 
-    public static Payment toPayment(PaymentCreateDto dto) {
+    public static Payment toPayment(PaymentCreateDto dto, OrderResponseDto order) {
         return Payment.builder()
-                .orderId(dto.getOrderId())
-                .clientId(dto.getClientId())
-                .totalPrice(dto.getTotalPrice())
+                .orderId(order.getId())
+                .clientId(order.getClientId())
+                .totalPrice(order.getTotalPrice())
                 .paymentMethod(dto.getPaymentMethod())
                 .status(Payment.PaymentStatus.PENDING)
                 .build();

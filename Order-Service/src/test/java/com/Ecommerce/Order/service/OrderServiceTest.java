@@ -1,10 +1,13 @@
 package com.Ecommerce.Order.service;
 
+import com.Ecommerce.Order.client.CatalogServiceClient;
+import com.Ecommerce.Order.client.ProductResponseDto;
 import com.Ecommerce.Order.dto.OrderCreateDto;
 import com.Ecommerce.Order.dto.OrderResponseDto;
 import com.Ecommerce.Order.entity.Order;
 import com.Ecommerce.Order.entity.OrderItem;
 import com.Ecommerce.Order.entity.SellerOrder;
+import com.Ecommerce.Order.exception.InvalidOrderException;
 import com.Ecommerce.Order.exception.OrderNotFoundException;
 import com.Ecommerce.Order.kafka.producer.OrderConfirmedProducer;
 import com.Ecommerce.Order.repository.OrderRepository;
@@ -16,7 +19,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
@@ -27,6 +29,7 @@ import org.springframework.data.domain.Sort;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,96 +46,157 @@ class OrderServiceTest {
     @Mock
     private OrderConfirmedProducer orderConfirmedProducer;
 
+    @Mock
+    private CatalogServiceClient catalogServiceClient;
+
     private OrderService orderService;
 
     @BeforeEach
     void setUp() {
-        orderService = new OrderService(orderRepository, orderConfirmedProducer);
+        orderService = new OrderService(orderRepository, orderConfirmedProducer, catalogServiceClient);
     }
 
     private OrderCreateDto createValidOrderDto() {
         OrderCreateDto dto = new OrderCreateDto();
-        dto.setClientId(UUID.randomUUID());
-
-        OrderCreateDto.SellerOrderDto sellerOrderDto = new OrderCreateDto.SellerOrderDto();
-        sellerOrderDto.setSellerId(UUID.randomUUID());
 
         OrderCreateDto.OrderItemDto itemDto1 = new OrderCreateDto.OrderItemDto();
         itemDto1.setProductId(UUID.randomUUID());
-        itemDto1.setProductName("Product 1");
-        itemDto1.setUnitPrice(new BigDecimal("10.00"));
         itemDto1.setQuantity(2);
 
         OrderCreateDto.OrderItemDto itemDto2 = new OrderCreateDto.OrderItemDto();
         itemDto2.setProductId(UUID.randomUUID());
-        itemDto2.setProductName("Product 2");
-        itemDto2.setUnitPrice(new BigDecimal("5.00"));
         itemDto2.setQuantity(1);
 
-        sellerOrderDto.setItems(List.of(itemDto1, itemDto2));
-        dto.setSellerOrders(List.of(sellerOrderDto));
+        dto.setItems(List.of(itemDto1, itemDto2));
 
         return dto;
     }
 
-    private Order createOrder(OrderCreateDto dto) {
-        Order order = Order.builder()
-                .id(UUID.randomUUID())
-                .clientId(dto.getClientId())
-                .status(Order.OrderStatus.PENDING_PAYMENT)
-                .totalPrice(new BigDecimal("25.00"))
+    private ProductResponseDto createProductResponse(UUID productId, UUID sellerId, String name, BigDecimal price) {
+        return ProductResponseDto.builder()
+                .id(productId)
+                .sellerId(sellerId)
+                .name(name)
+                .price(price)
+                .stock(100)
+                .active(true)
                 .build();
-
-        SellerOrder sellerOrder = SellerOrder.builder()
-                .id(UUID.randomUUID())
-                .order(order)
-                .sellerId(dto.getSellerOrders().get(0).getSellerId())
-                .status(SellerOrder.SellerOrderStatus.PENDING_PAYMENT)
-                .subTotal(new BigDecimal("25.00"))
-                .build();
-
-        List<OrderItem> items = dto.getSellerOrders().get(0).getItems().stream()
-                .map(itemDto -> OrderItem.builder()
-                        .id(UUID.randomUUID())
-                        .sellerOrder(sellerOrder)
-                        .productId(itemDto.getProductId())
-                        .productName(itemDto.getProductName())
-                        .unitPrice(itemDto.getUnitPrice())
-                        .quantity(itemDto.getQuantity())
-                        .build())
-                .toList();
-
-        sellerOrder.setItems(items);
-        order.setSellerOrders(List.of(sellerOrder));
-
-        return order;
     }
+
+    private Map<UUID, ProductResponseDto> createProductMap(OrderCreateDto dto, UUID sellerId) {
+        return Map.of(
+                dto.getItems().get(0).getProductId(),
+                createProductResponse(dto.getItems().get(0).getProductId(), sellerId, "Product 1", new BigDecimal("10.00")),
+                dto.getItems().get(1).getProductId(),
+                createProductResponse(dto.getItems().get(1).getProductId(), sellerId, "Product 2", new BigDecimal("5.00"))
+        );
+    }
+
     @Nested
     @DisplayName("createOrder() - Create a new order")
     class CreateOrderTests {
 
         @Test
-        @DisplayName("Should create order and return response DTO")
+        @DisplayName("Should create order with clientId from token, seller and product data from catalog")
         void createOrder_Success() {
             // Arrange
+            UUID clientId = UUID.randomUUID();
             OrderCreateDto dto = createValidOrderDto();
-            Order order = createOrder(dto);
+            UUID sellerId = UUID.randomUUID();
+            Map<UUID, ProductResponseDto> productMap = createProductMap(dto, sellerId);
 
-            when(orderRepository.save(any(Order.class))).thenReturn(order);
+            when(catalogServiceClient.fetchProducts(anyList())).thenReturn(productMap);
+            when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             // Act
-            OrderResponseDto result = orderService.createOrder(dto);
+            OrderResponseDto result = orderService.createOrder(dto, clientId);
 
             // Assert
             assertThat(result).isNotNull();
-            assertThat(result.getId()).isEqualTo(order.getId());
-            assertThat(result.getClientId()).isEqualTo(order.getClientId());
+            assertThat(result.getClientId()).isEqualTo(clientId);
             assertThat(result.getStatus()).isEqualTo("PENDING_PAYMENT");
-            assertThat(result.getTotalPrice()).isEqualTo(new BigDecimal("25.00"));
+            assertThat(result.getTotalPrice()).isEqualByComparingTo(new BigDecimal("25.00"));
             assertThat(result.getSellerOrders()).hasSize(1);
+            assertThat(result.getSellerOrders().get(0).getSellerId()).isEqualTo(sellerId);
             assertThat(result.getSellerOrders().get(0).getItems()).hasSize(2);
 
+            // Verify items have data from catalog, not from client
+            OrderResponseDto.OrderItemResponseDto item1 = result.getSellerOrders().get(0).getItems().get(0);
+            assertThat(item1.getProductId()).isEqualTo(dto.getItems().get(0).getProductId());
+            assertThat(item1.getProductName()).isEqualTo("Product 1");
+            assertThat(item1.getUnitPrice()).isEqualByComparingTo(new BigDecimal("10.00"));
+            assertThat(item1.getQuantity()).isEqualTo(2);
+
+            OrderResponseDto.OrderItemResponseDto item2 = result.getSellerOrders().get(0).getItems().get(1);
+            assertThat(item2.getProductId()).isEqualTo(dto.getItems().get(1).getProductId());
+            assertThat(item2.getProductName()).isEqualTo("Product 2");
+            assertThat(item2.getUnitPrice()).isEqualByComparingTo(new BigDecimal("5.00"));
+            assertThat(item2.getQuantity()).isEqualTo(1);
+
+            verify(catalogServiceClient).fetchProducts(anyList());
             verify(orderRepository).save(any(Order.class));
+        }
+
+        @Test
+        @DisplayName("Should group items by sellerId from catalog data when products have different sellers")
+        void createOrder_MultipleSellers() {
+            // Arrange
+            UUID clientId = UUID.randomUUID();
+            OrderCreateDto dto = new OrderCreateDto();
+
+            UUID productId1 = UUID.randomUUID();
+            UUID productId2 = UUID.randomUUID();
+            UUID sellerId1 = UUID.randomUUID();
+            UUID sellerId2 = UUID.randomUUID();
+
+            OrderCreateDto.OrderItemDto itemDto1 = new OrderCreateDto.OrderItemDto();
+            itemDto1.setProductId(productId1);
+            itemDto1.setQuantity(2);
+
+            OrderCreateDto.OrderItemDto itemDto2 = new OrderCreateDto.OrderItemDto();
+            itemDto2.setProductId(productId2);
+            itemDto2.setQuantity(3);
+
+            dto.setItems(List.of(itemDto1, itemDto2));
+
+            Map<UUID, ProductResponseDto> productMap = Map.of(
+                    productId1, createProductResponse(productId1, sellerId1, "Product A", new BigDecimal("10.00")),
+                    productId2, createProductResponse(productId2, sellerId2, "Product B", new BigDecimal("20.00"))
+            );
+
+            when(catalogServiceClient.fetchProducts(anyList())).thenReturn(productMap);
+            when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+            // Act
+            OrderResponseDto result = orderService.createOrder(dto, clientId);
+
+            // Assert
+            assertThat(result).isNotNull();
+            assertThat(result.getClientId()).isEqualTo(clientId);
+            assertThat(result.getSellerOrders()).hasSize(2);
+            assertThat(result.getTotalPrice()).isEqualByComparingTo(new BigDecimal("80.00")); // 2*10 + 3*20
+
+            verify(catalogServiceClient).fetchProducts(anyList());
+            verify(orderRepository).save(any(Order.class));
+        }
+
+        @Test
+        @DisplayName("Should throw InvalidOrderException when a product does not exist in catalog")
+        void createOrder_ProductNotFound() {
+            // Arrange
+            UUID clientId = UUID.randomUUID();
+            OrderCreateDto dto = createValidOrderDto();
+
+            when(catalogServiceClient.fetchProducts(anyList()))
+                    .thenThrow(new InvalidOrderException("Product with id ... not found in catalog."));
+
+            // Act & Assert
+            assertThatThrownBy(() -> orderService.createOrder(dto, clientId))
+                    .isInstanceOf(InvalidOrderException.class)
+                    .hasMessageContaining("Product");
+
+            verify(catalogServiceClient).fetchProducts(anyList());
+            verify(orderRepository, never()).save(any(Order.class));
         }
     }
 
@@ -148,7 +212,7 @@ class OrderServiceTest {
             int page = 0;
             int size = 10;
 
-            Order order = createOrder(createValidOrderDto());
+            Order order = createOrder();
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
             Page<Order> orderPage = new PageImpl<>(List.of(order), pageable, 1);
 
@@ -199,7 +263,7 @@ class OrderServiceTest {
         void getOrderById_Found() {
             // Arrange
             UUID id = UUID.randomUUID();
-            Order order = createOrder(createValidOrderDto());
+            Order order = createOrder();
             order.setId(id);
 
             when(orderRepository.findById(eq(id))).thenReturn(java.util.Optional.of(order));
@@ -242,7 +306,7 @@ class OrderServiceTest {
         void confirmOrder_Success() {
             // Arrange
             UUID orderId = UUID.randomUUID();
-            Order order = createOrder(createValidOrderDto());
+            Order order = createOrder();
             order.setId(orderId);
             order.setStatus(Order.OrderStatus.PENDING_PAYMENT);
 
@@ -286,7 +350,7 @@ class OrderServiceTest {
         void confirmOrder_AlreadyConfirmed() {
             // Arrange
             UUID orderId = UUID.randomUUID();
-            Order order = createOrder(createValidOrderDto());
+            Order order = createOrder();
             order.setStatus(Order.OrderStatus.CONFIRMED);
 
             PaymentConfirmedEvent paymentEvent = new PaymentConfirmedEvent(
@@ -339,7 +403,7 @@ class OrderServiceTest {
         void confirmOrder_CorrectKafkaEvent() {
             // Arrange
             UUID orderId = UUID.randomUUID();
-            Order order = createOrder(createValidOrderDto());
+            Order order = createOrder();
             order.setId(orderId);
             order.setStatus(Order.OrderStatus.PENDING_PAYMENT);
 
@@ -382,5 +446,60 @@ class OrderServiceTest {
             assertThat(capturedEvent.products().get(1).productId()).isEqualTo(order.getSellerOrders().get(0).getItems().get(1).getProductId());
             assertThat(capturedEvent.products().get(1).quantity()).isEqualTo(1);
         }
+    }
+
+    // Helper to create an Order entity (for tests that need persisted-like data)
+    private Order createOrder() {
+        UUID clientId = UUID.randomUUID();
+        UUID sellerId = UUID.randomUUID();
+        OrderCreateDto dto = createValidOrderDto();
+        Map<UUID, ProductResponseDto> productMap = createProductMap(dto, sellerId);
+        return buildOrderFromProducts(dto, clientId, productMap);
+    }
+
+    private Order buildOrderFromProducts(OrderCreateDto dto, UUID clientId, Map<UUID, ProductResponseDto> productMap) {
+        Order order = Order.builder()
+                .id(UUID.randomUUID())
+                .clientId(clientId)
+                .status(Order.OrderStatus.PENDING_PAYMENT)
+                .totalPrice(BigDecimal.ZERO)
+                .build();
+
+        UUID firstSellerId = productMap.values().iterator().next().getSellerId();
+        SellerOrder sellerOrder = SellerOrder.builder()
+                .id(UUID.randomUUID())
+                .order(order)
+                .sellerId(firstSellerId)
+                .status(SellerOrder.SellerOrderStatus.PENDING_PAYMENT)
+                .subTotal(BigDecimal.ZERO)
+                .build();
+
+        List<OrderItem> items = dto.getItems().stream()
+                .map(itemDto -> {
+                    ProductResponseDto product = productMap.get(itemDto.getProductId());
+                    return OrderItem.builder()
+                            .id(UUID.randomUUID())
+                            .sellerOrder(sellerOrder)
+                            .productId(product.getId())
+                            .productName(product.getName())
+                            .unitPrice(product.getPrice())
+                            .quantity(itemDto.getQuantity())
+                            .build();
+                })
+                .toList();
+
+        sellerOrder.setItems(items);
+        BigDecimal subTotal = items.stream()
+                .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        sellerOrder.setSubTotal(subTotal);
+        order.setSellerOrders(List.of(sellerOrder));
+
+        BigDecimal totalPrice = order.getSellerOrders().stream()
+                .map(SellerOrder::getSubTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        order.setTotalPrice(totalPrice);
+
+        return order;
     }
 }

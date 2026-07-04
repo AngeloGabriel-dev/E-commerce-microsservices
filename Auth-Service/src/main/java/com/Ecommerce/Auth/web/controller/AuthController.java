@@ -1,5 +1,6 @@
 package com.Ecommerce.Auth.web.controller;
 
+import com.Ecommerce.Auth.dto.ServiceAccountLoginDto;
 import com.Ecommerce.Auth.dto.UserCreateDto;
 import com.Ecommerce.Auth.dto.UserLoginDto;
 import com.Ecommerce.Auth.dto.mapper.UserMapper;
@@ -8,6 +9,7 @@ import com.Ecommerce.Auth.jwt.JwtToken;
 import com.Ecommerce.Auth.jwt.JwtUserDetails;
 import com.Ecommerce.Auth.jwt.JwtUserDetailsService;
 import com.Ecommerce.Auth.service.AuthService;
+import com.Ecommerce.Auth.service.ServiceAccountService;
 import com.Ecommerce.Auth.web.exceptions.ErrorMessage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -31,10 +33,17 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/auth")
 public class AuthController {
     private final AuthService authService;
+    private final ServiceAccountService serviceAccountService;
 
-    @PostMapping
+    @PostMapping("/login")
     public ResponseEntity<JwtToken> authenticate(@RequestBody @Valid UserLoginDto dto, HttpServletRequest request){
         JwtToken token = authService.authenticate(dto);
+        return ResponseEntity.ok(token);
+    }
+
+    @PostMapping("/service-account/login")
+    public ResponseEntity<JwtToken> authenticateServiceAccount(@RequestBody @Valid ServiceAccountLoginDto dto, HttpServletRequest request){
+        JwtToken token = serviceAccountService.authenticate(dto);
         return ResponseEntity.ok(token);
     }
 

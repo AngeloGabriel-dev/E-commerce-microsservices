@@ -1,6 +1,7 @@
 package com.Ecommerce.User.service;
 
 import com.Ecommerce.User.dto.SellerResponseDto;
+import com.Ecommerce.User.dto.UserContactInfoDto;
 import com.Ecommerce.User.dto.UserCreateDto;
 import com.Ecommerce.User.entity.User;
 import com.Ecommerce.User.repository.UserRepository;
@@ -53,6 +54,20 @@ public class UserService {
         return new SellerResponseDto(
                 user.getId().toString(),
                 user.getName(),
+                user.getEmail(),
+                user.getPhoneNumber()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public UserContactInfoDto getUserContactInfo(UUID id){
+        User user = userRepository.findById(id).orElseThrow(
+                () -> new EntityNotFoundException(String.format("User with id = %s not founded.", id))
+        );
+
+        log.info("User contact info requested for id: {}", id);
+
+        return new UserContactInfoDto(
                 user.getEmail(),
                 user.getPhoneNumber()
         );
