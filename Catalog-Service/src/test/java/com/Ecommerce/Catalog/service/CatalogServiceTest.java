@@ -221,7 +221,7 @@ class CatalogServiceTest {
         void deductStock_Success() {
             OrderConfirmedEvent.ProductStockItem stockItem =
                     new OrderConfirmedEvent.ProductStockItem(productId, 3);
-            OrderConfirmedEvent event = new OrderConfirmedEvent(UUID.randomUUID(), List.of(stockItem));
+            OrderConfirmedEvent event = new OrderConfirmedEvent(UUID.randomUUID(), UUID.randomUUID(), List.of(stockItem));
 
             when(productRepository.findById(productId)).thenReturn(Optional.of(product));
 
@@ -237,7 +237,7 @@ class CatalogServiceTest {
         void deductStock_ProductNotFound() {
             OrderConfirmedEvent.ProductStockItem stockItem =
                     new OrderConfirmedEvent.ProductStockItem(productId, 3);
-            OrderConfirmedEvent event = new OrderConfirmedEvent(UUID.randomUUID(), List.of(stockItem));
+            OrderConfirmedEvent event = new OrderConfirmedEvent(UUID.randomUUID(), UUID.randomUUID(), List.of(stockItem));
 
             when(productRepository.findById(productId)).thenReturn(Optional.empty());
 
@@ -250,7 +250,7 @@ class CatalogServiceTest {
         void deductStock_InsufficientStock() {
             OrderConfirmedEvent.ProductStockItem stockItem =
                     new OrderConfirmedEvent.ProductStockItem(productId, 20);
-            OrderConfirmedEvent event = new OrderConfirmedEvent(UUID.randomUUID(), List.of(stockItem));
+            OrderConfirmedEvent event = new OrderConfirmedEvent(UUID.randomUUID(), UUID.randomUUID(), List.of(stockItem));
 
             when(productRepository.findById(productId)).thenReturn(Optional.of(product));
 

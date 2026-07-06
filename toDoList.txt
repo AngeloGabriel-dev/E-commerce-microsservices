@@ -3,4 +3,4 @@
 pra requisições REST -> OK
 - adicionar sandboxInitPoint no payment e paymentResponseDTO -> OK
 - desenvolver autenticação para micro-servicos -> OK
-- compilar o common antes de buildar tudo
+- configurar autorização pra registrar usuarios no user-service

@@ -35,6 +35,22 @@ services:
     networks:
       - ecommerce-network
 
+  gateway-service:
+    build:
+      context: ./Gateway-Service
+    container_name: gateway-service
+    depends_on:
+      - auth-service
+      - user-service
+      - catalog-service
+      - order-service
+      - payment-service
+      - notification-service
+    ports:
+      - "8080:8086"
+    networks:
+      - ecommerce-network
+
   auth-service:
     build:
       context: ./Auth-Service
@@ -43,7 +59,7 @@ services:
       - postgres
       - kafka
     ports:
-      - "8080:8080"
+      - "8081:8080"
     networks:
       - ecommerce-network
 
@@ -55,7 +71,7 @@ services:
       - postgres
       - kafka
     ports:
-      - "8081:8081"
+      - "8082:8081"
     networks:
       - ecommerce-network
 
@@ -67,7 +83,7 @@ services:
       - postgres
       - kafka
     ports:
-      - "8082:8082"
+      - "8083:8082"
     networks:
       - ecommerce-network
 
@@ -79,7 +95,7 @@ services:
       - postgres
       - kafka
     ports:
-      - "8083:8083"
+      - "8084:8083"
     networks:
       - ecommerce-network
 
@@ -91,7 +107,7 @@ services:
       - postgres
       - kafka
     ports:
-      - "8084:8084"
+      - "8085:8084"
     networks:
       - ecommerce-network
 
@@ -102,10 +118,25 @@ services:
     depends_on:
       - kafka
     ports:
-      - "8085:8085"
+      - "8086:8085"
     environment:
       MAIL_USERNAME: ${MAIL_USERNAME:-your-email@gmail.com}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-your-app-password}
+    networks:
+      - ecommerce-network
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://gateway-service:8086
+    container_name: frontend
+    depends_on:
+      - gateway-service
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_BASE_URL: http://gateway-service:8086
     networks:
       - ecommerce-network
 

@@ -27,6 +27,7 @@
         <module>User-Service</module>
         <module>ecommerce-common</module>
         <module>Notification-Service</module>
+        <module>Gateway-Service</module>
     </modules>
 
     <properties>
@@ -47,6 +48,11 @@
             <dependency>
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
                 <version>${springdoc.version}</version>
             </dependency>
             <dependency>

@@ -2,7 +2,9 @@ package com.Ecommerce.Order.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
@@ -15,16 +17,18 @@ public class SpringDocOpenApiConfig {
         return new OpenAPI()
                 .components(
                         new Components()
-                                .addSecuritySchemes("security", securityScheme())
+                                .addSecuritySchemes("bearerAuth", securityScheme())
                 )
                 .addSecurityItem(
-                        new SecurityRequirement().addList("security")
+                        new SecurityRequirement().addList("bearerAuth")
                 )
                 .info(
                         new Info()
-                                .title("Order Service API - E-commerce")
+                                .title("E-commerce Order Service API")
                                 .description("API para gestão de pedidos do e-commerce")
                                 .version("v1")
+                                .license(new License().name("Apache 2.0").url("https://www.apache.org/licenses/LICENSE-2.0"))
+                                .contact(new Contact().name("Angelo Gabriel").email("angelogabriel01@live.com"))
                 );
     }
 
@@ -35,6 +39,6 @@ public class SpringDocOpenApiConfig {
                 .in(SecurityScheme.In.HEADER)
                 .scheme("bearer")
                 .bearerFormat("JWT")
-                .name("security");
+                .name("bearerAuth");
     }
 }

@@ -14,11 +14,11 @@ public class SpringDocOpenApiConfig {
     @Bean
     public OpenAPI openAPI(){
         return new OpenAPI()
-                .components(new Components().addSecuritySchemes("security", securityScheme()))
+                .components(new Components().addSecuritySchemes("bearerAuth", securityScheme()))
                 .info(
                         new Info()
-                                .title("Rest API - Real Time Chat")
-                                .description("API para a gestão de uma aplicação de chat em tempo real")
+                                .title("E-commerce User Service API")
+                                .description("API para gestão de usuários do e-commerce")
                                 .version("v1")
                                 .license(new License().name("Apache 2.0").url("https://www.apache.org/licenses/LICENSE-2.0"))
                                 .contact(new Contact().name("Angelo Gabriel").email("angelogabriel01@live.com"))
@@ -34,6 +34,6 @@ public class SpringDocOpenApiConfig {
                 .in(SecurityScheme.In.HEADER)
                 .scheme("bearer")
                 .bearerFormat("JWT")
-                .name("security");
+                .name("bearerAuth");
     }
 }

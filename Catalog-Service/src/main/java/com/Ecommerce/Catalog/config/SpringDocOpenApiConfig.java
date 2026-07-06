@@ -17,16 +17,18 @@ public class SpringDocOpenApiConfig {
         return new OpenAPI()
                 .components(
                         new Components()
-                                .addSecuritySchemes("security", securityScheme())
+                                .addSecuritySchemes("bearerAuth", securityScheme())
                 )
                 .addSecurityItem(
-                        new SecurityRequirement().addList("security")
+                        new SecurityRequirement().addList("bearerAuth")
                 )
                 .info(
                         new Info()
-                                .title("Catalog Service API - E-commerce")
+                                .title("E-commerce Catalog Service API")
                                 .description("API para gestão de produtos do catálogo de e-commerce")
                                 .version("v1")
+                                .license(new License().name("Apache 2.0").url("https://www.apache.org/licenses/LICENSE-2.0"))
+                                .contact(new Contact().name("Angelo Gabriel").email("angelogabriel01@live.com"))
                 );
     }
 
@@ -37,6 +39,6 @@ public class SpringDocOpenApiConfig {
                 .in(SecurityScheme.In.HEADER)
                 .scheme("bearer")
                 .bearerFormat("JWT")
-                .name("security");
+                .name("bearerAuth");
     }
 }

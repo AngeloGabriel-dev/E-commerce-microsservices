@@ -1,0 +1,91 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          uri: http://auth-service:8080
+          predicates:
+            - Path=/api/v1/auth/**
+
+        - id: user-service
+          uri: http://user-service:8081
+          predicates:
+            - Path=/api/v1/users/**
+
+        - id: catalog-service
+          uri: http://catalog-service:8082
+          predicates:
+            - Path=/api/v1/products/**
+
+        - id: order-service
+          uri: http://order-service:8083
+          predicates:
+            - Path=/api/v1/orders/**
+
+        - id: payment-service
+          uri: http://payment-service:8084
+          predicates:
+            - Path=/api/v1/payments/**
+
+      # Swagger/OpenAPI routes for each service
+        - id: auth-service-swagger
+          uri: http://auth-service:8080
+          predicates:
+            - Path=/auth-swagger/**
+          filters:
+            - RewritePath=/auth-swagger/(?<segment>.*), /$\{segment}
+
+        - id: user-service-swagger
+          uri: http://user-service:8081
+          predicates:
+            - Path=/user-swagger/**
+          filters:
+            - RewritePath=/user-swagger/(?<segment>.*), /$\{segment}
+
+        - id: catalog-service-swagger
+          uri: http://catalog-service:8082
+          predicates:
+            - Path=/catalog-swagger/**
+          filters:
+            - RewritePath=/catalog-swagger/(?<segment>.*), /$\{segment}
+
+        - id: order-service-swagger
+          uri: http://order-service:8083
+          predicates:
+            - Path=/order-swagger/**
+          filters:
+            - RewritePath=/order-swagger/(?<segment>.*), /$\{segment}
+
+        - id: payment-service-swagger
+          uri: http://payment-service:8084
+          predicates:
+            - Path=/payment-swagger/**
+          filters:
+            - RewritePath=/payment-swagger/(?<segment>.*), /$\{segment}
+
+        - id: notification-service-swagger
+          uri: http://notification-service:8085
+          predicates:
+            - Path=/notification-swagger/**
+          filters:
+            - RewritePath=/notification-swagger/(?<segment>.*), /$\{segment}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.Ecommerce.gateway: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.web.reactive: DEBUG
