@@ -23,12 +23,10 @@ com\Ecommerce\Order\entity\SellerOrder$SellerOrderBuilder.class
 com\Ecommerce\Order\config\SpringDocOpenApiConfig.class
 com\Ecommerce\Order\dto\OrderResponseDto$OrderItemResponseDto.class
 com\Ecommerce\Order\entity\Order.class
-com\Ecommerce\Order\config\CorsConfig$1.class
 com\Ecommerce\Order\entity\Order$OrderStatus.class
 com\Ecommerce\Order\entity\Order$OrderBuilder.class
 com\Ecommerce\Order\config\SpringSecurityConfig.class
 com\Ecommerce\Order\repository\SellerOrderRepository.class
-com\Ecommerce\Order\config\CorsConfig.class
 com\Ecommerce\Order\jwt\JwtAuthenticationEntryPoint.class
 com\Ecommerce\Order\exception\InvalidOrderException.class
 com\Ecommerce\Order\config\BearerTokenInterceptor.class

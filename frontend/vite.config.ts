@@ -12,4 +12,11 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Self-hosted (Docker) build target. Uses Nitro's Node preset so
+  // `bun run build` produces a standalone Node server under `.output/`.
+  // Note: inside a Lovable build the preset is forced to Cloudflare; this
+  // override only applies to your own local/CI builds.
+  nitro: {
+    preset: "node-server",
+  },
 });
