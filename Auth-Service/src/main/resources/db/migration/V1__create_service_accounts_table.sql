@@ -1,3 +1,11 @@
+-- Create users table
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(200) NOT NULL,
+    role VARCHAR(25) NOT NULL DEFAULT 'ROLE_CLIENT'
+);
+
 -- Create service_accounts table
 CREATE TABLE IF NOT EXISTS service_accounts (
     id UUID PRIMARY KEY,
