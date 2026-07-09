@@ -1,6 +1,7 @@
 # E-Commerce Microservices Platform
 
 A modern, fully containerized e-commerce platform built on a **microservices architecture** using **Java 21 with Spring Boot** on the backend and **React with TanStack Start** on the frontend. The system features event-driven communication via **Apache Kafka**, synchronous REST APIs, **JWT-based authentication** with service account support, and **Mercado Pago** payment integration.
+This is just a MVP developed using only free plan AI's like deepseek and loveable free plan. That project don't aim to be in production, it is just for system design studies.
 
 > **Status**: Active Development  
 > **Java Version**: 21  
@@ -21,7 +22,7 @@ A modern, fully containerized e-commerce platform built on a **microservices arc
 5. [Features](#features)
 6. [Technology Stack](#technology-stack)
 7. [Getting Started](#getting-started)
-8. [Justification of Technical Choices](#justification-of-technical-choices)
+9. [Justification of Technical Choices](#justification-of-technical-choices)
 
 ---
 
@@ -450,6 +451,23 @@ Each service can be run independently for development. You'll need PostgreSQL an
    ```
 
 ---
+## Application Screens (`application-screens`)
+### Start Screen
+![Screenshot](https://github.com/AngeloGabriel-dev/E-commerce-microsservices/blob/main/images%20for%20presentation/Start-Screen.png)
+### Car Screen
+![Screenshot](https://github.com/AngeloGabriel-dev/E-commerce-microsservices/blob/main/images%20for%20presentation/Car-Screen.png)
+### Checkout Screen
+![Screenshot](https://github.com/AngeloGabriel-dev/E-commerce-microsservices/blob/main/images%20for%20presentation/Checkout-Screen.png)
+### Register Screen
+![Screenshot](https://github.com/AngeloGabriel-dev/E-commerce-microsservices/blob/main/images%20for%20presentation/Register-Screen.png)
+### Login Screen
+![Screenshot](https://github.com/AngeloGabriel-dev/E-commerce-microsservices/blob/main/images%20for%20presentation/Login-Screen.png)
+### Create Product Screen
+![Screenshot](https://github.com/AngeloGabriel-dev/E-commerce-microsservices/blob/main/images%20for%20presentation/CreateProduct-Screen.png)
+### Catalog Screen
+![Screenshot](https://github.com/AngeloGabriel-dev/E-commerce-microsservices/blob/main/images%20for%20presentation/Catalog-Screen.png)
+### Product Screen
+![Screenshot](https://github.com/AngeloGabriel-dev/E-commerce-microsservices/blob/main/images%20for%20presentation/Product-Screen.png)
 
 ## Justification of Technical Choices
 
